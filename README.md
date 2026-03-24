@@ -2,6 +2,8 @@
 
 > 面向研发团队和 SRE 工程师的 GitHub Copilot 全面导入指南，涵盖背景、模型选择、各模式使用技巧、Instruction/Skills 配置，以及与 CI/CD 的集成最佳实践。
 
+简要概览：本仓库示例演示如何在 SRE / 平台团队中安全、可观测地使用 Copilot 的 Ask/Edit/Agent/Plan 工作流，包含可运行的 Bash demo、Workflow 模板与操作说明。请在本页下方的 Demo 目录中快速定位示例并查看对应 README。
+
 ## 目录
 
 1. [AI Agent 背景及 Copilot 发展](#1-ai-agent-利用背景及-copilot-发展)
@@ -40,12 +42,12 @@ AI Agent 的核心能力：
 GitHub Copilot 是由 GitHub 和 OpenAI 合作开发的 AI 编程助手，也是目前最广泛使用的 AI 编程工具之一。
 
 **核心能力**:
-- 📝 **代码补全**: 根据上下文实时建议后续代码
-- 💬 **多轮对话**: 在聊天面板中进行多轮交互
-- 🔧 **代码编辑**: 选中代码后直接下达修改指令
-- 🤖 **自主执行**: Agent Mode 可自主完成完整任务
-- 📋 **规划先行**: Plan Mode 先制定计划再执行
-- 🔍 **代码审查**: 自动审查 PR 并给出改进建议
+- 📝 **代码补全（Inline completions）**: 根据当前文件和光标上下文生成局部或整段补全（变量名、函数体、注释），适用于快速完成单一函数或补全重复模板。例如：在循环或条件中触发补全以生成实现细节。
+- 💬 **多轮对话（Ask / Chat Mode）**: 在聊天面板进行逐步澄清与迭代，适合需求探索、设计讨论与生成样例代码；可以保存对话历史以便后续复用或续写。
+- 🔧 **代码编辑（Edit Mode）**: 选中代码并下达改造指令（重构、添加错误处理、替换实现）。适合局部重构、增加边界检查或批量重写函数签名。
+- 🤖 **自主执行（Agent Mode）**: 在获得授权后，Agent 可以运行命令、修改多文件、执行测试并提交变更。适合自动化跨文件修复或端到端任务，但在执行前应先审阅 Agent 的计划（Plan）。
+- 📋 **规划先行（Plan Mode）**: 先生成分步执行计划并等待用户确认，适用于高风险或影响范围广的变更（多文件重构、CI/CD 流程改动），能有效减少返工与误改。
+- 🔍 **代码审查辅助（Code Review Assist）**: 自动为 PR 生成审查建议、指出潜在问题并提供可应用的补丁建议（diff/patch），用于加速审查并保持团队一致性。
 
 **与同类工具对比**:
 
@@ -94,7 +96,7 @@ Copilot 提供四种主要模式，适用于不同工作场景：
 
 ```
 提问/生成  →  Ask Mode     (Ctrl+I)
-修改代码   →  Edit Mode    (Ctrl+K / 内联编辑)
+修改代码   →  Edit Mode    (Ctrl+I / 内联编辑 — 在新版中通过聊天面板发起编辑指令，原快捷键 Ctrl+K 已移除)
 自主执行   →  Agent Mode   (聊天面板选择 Agent)
 先规划后做 →  Plan Mode    (Agent 模式中选择 Plan)
 ```
@@ -132,8 +134,8 @@ Copilot 提供四种主要模式，适用于不同工作场景：
 
 | 项目 | 内容 |
 |------|------|
-| 快捷键 | Ctrl + K (Win/Linux) / Cmd + K (Mac) |
-| 触发方式 | 选中代码后触发 |
+| 快捷键 | Ctrl + I (Win/Linux) / Cmd + I (Mac) — 在新版中通过聊天面板发起编辑/改造指令，原 `Ctrl+K` 已移除 |
+| 触发方式 | 在聊天面板中发起对话或选中代码后通过聊天输入改造指令 |
 | 典型用途 | 重构、添加功能、修复 bug |
 
 **指令模板**:
@@ -145,28 +147,10 @@ Copilot 提供四种主要模式，适用于不同工作场景：
 **演练 Demo** → 详见 [demos/edit-mode/](demos/edit-mode/README.md)
 
 1. 打开 `demos/edit-mode/divide.sh`，选中 `divide()` 函数
-2. 按 Ctrl + K，输入: `"添加输入验证、除零检查和日志记录"`
+2. 在聊天面板（或按 Ctrl + I）发起对话，输入: `"添加输入验证、除零检查和日志记录"`
 3. 观察 Copilot 如何将简单函数扩展为生产级代码
 
-**改造前后对比**:
-
-```bash
-# 改造前（3行）
-divide() {
-    echo $(( $1 / $2 ))
-}
-
-# 改造后（35行，含日志、验证、错误处理）
-divide() {
-    log_info "执行除法: $1 / $2"
-    [[ "$1" =~ ^-?[0-9]+$ ]] || { log_error "无效被除数"; return 1; }
-    [[ "$2" =~ ^-?[0-9]+$ ]] || { log_error "无效除数"; return 1; }
-    [ "$2" -eq 0 ] && { log_error "除零错误"; return 1; }
-    local result=$(( $1 / $2 ))
-    log_info "结果: $result"
-    echo $result
-}
-```
+**改造示例**：详见 [demos/edit-mode/divide.sh](demos/edit-mode/divide.sh)。文档中已简化对比展示；如需逐行对比，请在该目录内查看历史提交或使用 `git diff` 比较改动。
 
 ---
 
@@ -372,23 +356,6 @@ Premium Request 是否消耗，核心取决于**你选的模型**，而不是单
 第5步：回到 mini 做文档整理与收尾
 ```
 
-#### 按角色的使用建议
-
-**后端 / SRE 工程师**:
-- 使用 Agent Mode 自动化 Bash 脚本检查和修复
-- 配置 SRE 角色的 Instruction 获得更规范的代码
-- 用 Plan Mode 规划复杂的 CI/CD 流程改动
-
-**前端工程师**:
-- Ask Mode 生成组件、Hook、测试用例
-- Edit Mode 重构样式和逻辑
-- 配置前端规范 Instruction（TypeScript、a11y 等）
-
-**DevOps / Platform 工程师**:
-- Agent Mode 分析和修复 Workflow 失败
-- Skills 定期抓取工具升级日志
-- Instruction 强制 IaC 和安全规范
-
 #### 效率提升路线图
 
 ```
@@ -423,3 +390,25 @@ Premium Request 是否消耗，核心取决于**你选的模型**，而不是单
 | [model-comparison](demos/model-comparison/README.md) | 模型选择指南 | 三档质量对比 | Quality Gate |
 
 查看 [demos/INDEX.md](demos/INDEX.md) 获取完整索引和快速运行命令。
+
+## Screenshots
+
+示例界面与运行截图可放置在 `assets/screenshots/` 下。当前仓库未包含实际图片，建议将下列截图上传到该目录并在此处引用：
+
+- `assets/screenshots/ask-mode.png` — Ask Mode 聊天面板与示例输出
+- `assets/screenshots/edit-mode.png` — Edit Mode 编辑前后对比（可选）
+- `assets/screenshots/agent-mode.png` — Agent 执行计划与运行报告
+
+添加截图后，README 将自动显示图片（例如：`![Ask Mode](assets/screenshots/ask-mode.png)`）。截图有助于演示交互界面与运行结果。
+
+## 参考链接
+
+- GitHub Copilot 官方文档： https://docs.github.com/en/copilot
+- GitHub Copilot 入门指南： https://docs.github.com/en/copilot/getting-started-with-github-copilot
+- GitHub Actions 入门： https://docs.github.com/en/actions/learn-github-actions/introduction-to-github-actions
+- GitHub Changelog（更新与发布说明）： https://github.blog/changelog/
+- ShellCheck（Shell 静态分析工具）： https://www.shellcheck.net/
+- GitHub Learning Lab（实战教学）： https://lab.github.com/
+- GitHub 官方频道（视频教程）： https://www.youtube.com/github
+- GitHub Copilot-Duran 技術冶煉廠（视频教程）：https://www.youtube.com/watch?v=rnzYMQiCfoY&list=PL9uXtymONHs_CsxdFTd6t41UZs8p0X-9a
+- NotebookLLM： https://notebooklm.google.com/
