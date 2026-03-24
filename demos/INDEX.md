@@ -1,62 +1,54 @@
-# 主索引文件
+# Demo 索引
 
-您现在已经将所有的 demo 分开放在不同的文件夹中。
+所有演示已按功能分类放在独立文件夹中，每个 demo 包含详细的 Bash 脚本示例和对应的 GitHub Actions Workflow。
 
 ## 文件夹结构
 
 ```
 demos/
-├── ask-mode/              # Ask Mode 演示
-│   ├── README.md
-│   └── check_file.sh
-├── edit-mode/             # Edit Mode 演示
-│   ├── README.md
-│   └── divide.sh
-├── agent-mode/            # Agent Mode 演示
-│   ├── README.md
-│   └── test.sh
-├── plan-mode/             # Plan Mode 演示
-│   └── README.md
-├── instruction/           # Instruction 演示
-│   └── README.md
-├── skills/                # Skills 演示
-│   └── README.md
-└── model-comparison/      # 模型对比演示
-    └── README.md
+├── ask-mode/              # Ask Mode: 自然语言提问生成代码
+│   ├── README.md          ← 多轮对话示例 + Workflow
+│   └── check_file.sh      ← 文件检查工具（含批量处理）
+├── edit-mode/             # Edit Mode: 修改和改进现有代码
+│   ├── README.md          ← 改进步骤 + Workflow
+│   └── divide.sh          ← 带日志和验证的除法脚本
+├── agent-mode/            # Agent Mode: 自主执行任务
+│   ├── README.md          ← 自动化场景 + Workflow
+│   └── test.sh            ← 系统健康检查脚本
+├── plan-mode/             # Plan Mode: 制定计划再执行
+│   ├── README.md          ← 规划流程 + 多 job Workflow
+│   └── tool.sh            ← 多子命令工具（check/build/deploy）
+├── instruction/           # Instruction: 全局行为规范
+│   └── README.md          ← 效果对比 + SRE Workflow
+├── skills/                # Skills: 可复用自定义任务
+│   └── README.md          ← 自定义技能 + 定时 Workflow
+└── model-comparison/      # 模型对比: 不同模型的输出差异
+    └── README.md          ← 各模型代码质量对比
 ```
 
-## 快速开始
+## 快速导航
 
-1. **Ask Mode**: 查看 [ask-mode/README.md](ask-mode/README.md)
-   - 演示如何使用自然语言查询生成代码
+| Demo | 核心功能 | Bash 脚本 | Workflow |
+|------|---------|-----------|---------|
+| [ask-mode](ask-mode/README.md) | 多轮对话生成代码 | ✅ check_file.sh | ✅ File Check Pipeline |
+| [edit-mode](edit-mode/README.md) | 改进现有代码 | ✅ divide.sh | ✅ SRE Testing Pipeline |
+| [agent-mode](agent-mode/README.md) | 自主执行任务 | ✅ test.sh | ✅ Automated Health Check |
+| [plan-mode](plan-mode/README.md) | 先规划再执行 | ✅ tool.sh | ✅ Multi-Stage Pipeline |
+| [instruction](instruction/README.md) | 全局行为定制 | ✅ deploy.sh 示例 | ✅ SRE Deploy Pipeline |
+| [skills](skills/README.md) | 可复用自定义技能 | ✅ skill-runner.sh | ✅ Weekly Changelog |
+| [model-comparison](model-comparison/README.md) | 模型选择指南 | ✅ 三档质量对比 | ✅ Quality Gate |
 
-2. **Edit Mode**: 查看 [edit-mode/README.md](edit-mode/README.md)
-   - 演示如何修改和改进现有代码
+## 运行所有脚本
 
-3. **Agent Mode**: 查看 [agent-mode/README.md](agent-mode/README.md)
-   - 演示如何执行自动化任务
+```bash
+# 赋予执行权限
+chmod +x demos/**/*.sh
 
-4. **Plan Mode**: 查看 [plan-mode/README.md](plan-mode/README.md)
-   - 演示如何规划项目和任务
-
-5. **Instruction**: 查看 [instruction/README.md](instruction/README.md)
-   - 演示如何使用自定义指令
-
-6. **Skills**: 查看 [skills/README.md](skills/README.md)
-   - 演示如何使用预定义技能
-
-7. **模型对比**: 查看 [model-comparison/README.md](model-comparison/README.md)
-   - 演示不同模型的对比和使用建议
-
-## 每个文件夹的内容
-
-每个 demo 文件夹都包含：
-- **README.md**: 详细的说明文档，包括步骤、技巧和输出示例
-- 示例脚本或配置文件（如适用）
-
-## 使用建议
-
-- 逐个查看每个 demo 的 README.md 文件
-- 根据需要运行相应的示例脚本
-- 修改脚本以适应您的具体需求
-- 在 VS Code 中打开相应的文件夹进行实践
+# 运行各 demo 脚本
+./demos/ask-mode/check_file.sh /etc/hosts
+./demos/edit-mode/divide.sh
+./demos/agent-mode/test.sh
+./demos/plan-mode/tool.sh check
+./demos/plan-mode/tool.sh build --dry-run
+./demos/plan-mode/tool.sh deploy --dry-run
+```
